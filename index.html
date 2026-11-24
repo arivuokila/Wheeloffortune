@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wheel of Fortune - Interactive & Customizable</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Outfit', 'sans-serif'],
+          },
+          animation: {
+            'bounce-short': 'bounceShort 0.2s ease-in-out',
+            'pulse-glow': 'pulseGlow 2s infinite',
+          },
+          keyframes: {
+            bounceShort: {
+              '0%, 100%': { transform: 'translateY(0) rotate(0deg)' },
+              '50%': { transform: 'translateY(-6px) rotate(-12deg)' },
+            },
+            pulseGlow: {
+              '0%, 100%': { opacity: '0.8', transform: 'scale(1)' },
+              '50%': { opacity: '1', transform: 'scale(1.03)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(51, 65, 85, 0.8);
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(71, 85, 105, 1);
+    }
+    
+    /* Input Styling */
+    input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+    input[type="color"]::-webkit-color-swatch {
+      border: none;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body class="h-full font-sans antialiased bg-slate-950 text-slate-100 flex flex-col min-h-screen selection:bg-indigo-500 selection:text-white">
+
+  <!-- Header Banner -->
+  <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 ring-1 ring-white/20">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xl font-display font-extrabold tracking-tight text-white flex items-center gap-2">
+            Wheel of Fortune
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">8 Sectors</span>
+          </h1>
+          <p class="text-xs text-slate-400 hidden sm:block">Spin the interactive wheel or customize text &amp; colors instantly!</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <!-- Sound Toggle Button -->
+        <button id="soundToggleBtn" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <span id="soundIcon">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+            </svg>
+          </span>
+          <span id="soundLabel" class="text-xs font-medium">Sound ON</span>
+        </button>
+
+        <!-- Quick Help / Reset Info -->
+        <button id="helpBtn" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-400 hover:text-white transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    
+    <!-- LEFT / CENTER COLUMN: Wheel Display & Winner Banner & History -->
+    <section class="lg:col-span-7 flex flex-col items-center space-y-6">
+      
+      <!-- Wheel Container Box -->
+      <div class="w-full bg-slate-900/80 rounded-3xl p-4 sm:p-6 border border-slate-800 shadow-2xl relative flex flex-col items-center overflow-hidden backdrop-blur-sm">
+        
+        <!-- Outer Glow Ring -->
+        <div class="absolute -inset-1 rounded-3xl bg-gradient-to-r from-amber-500/10 via-indigo-500/10 to-emerald-500/10 blur-xl pointer-events-none"></div>
+
+        <!-- Wheel Canvas Area -->
+        <div class="relative w-full max-w-[440px] aspect-square flex items-center justify-center my-2 select-none">
+          
+          <!-- Flapper Top Pointer -->
+          <div id="pointerContainer" class="absolute -top-3 z-20 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none">
+            <div class="w-8 h-10 drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] transform origin-top transition-transform duration-75" id="flapper">
+              <svg viewBox="0 0 36 46" fill="none" class="w-full h-full">
+                <!-- Outer Pointer Shadow & Gradient -->
+                <path d="M18 44L4 10C2 5 6 0 12 0H24C30 0 34 5 32 10L18 44Z" fill="url(#pointerGrad)" stroke="#F59E0B" stroke-width="2"/>
+                <circle cx="18" cy="10" r="5" fill="#FFF" opacity="0.9"/>
+                <defs>
+                  <linearGradient id="pointerGrad" x1="18" y1="0" x2="18" y2="44" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#EF4444"/>
+                    <stop offset="1" stop-color="#B91C1C"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+          </div>
+
+          <!-- HTML5 Canvas -->
+          <canvas id="wheelCanvas" class="w-full h-full rounded-full cursor-pointer touch-none shadow-[0_0_50px_rgba(0,0,0,0.5)]"></canvas>
+
+          <!-- Central SPIN Button Hub -->
+          <button id="spinBtn" class="absolute z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 border-4 border-amber-400/90 shadow-[0_0_25px_rgba(245,158,11,0.4),inset_0_2px_4px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95 transition-all flex flex-col items-center justify-center group cursor-pointer focus:outline-none">
+            <span class="text-amber-400 font-display font-black text-lg sm:text-xl tracking-wider group-hover:text-amber-300 transition-colors drop-shadow">SPIN</span>
+            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest -mt-0.5">PRESS</span>
+          </button>
+        </div>
+
+        <!-- Current Status / Quick Spin Trigger -->
+        <div class="mt-4 w-full flex items-center justify-between gap-4 border-t border-slate-800/80 pt-4">
+          <div class="flex items-center space-x-2 text-xs text-slate-400">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span id="statusText">Ready to spin! Click wheel or SPIN button.</span>
+          </div>
+
+          <button id="bigSpinBtn" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-slate-950 font-display font-bold text-sm tracking-wide shadow-lg shadow-orange-500/25 active:scale-95 transition-all flex items-center space-x-2">
+            <svg class="w-4 h-4 text-slate-950 fill-current" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
+            </svg>
+            <span>Spin Wheel</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Recent History Panel -->
+      <div class="w-full bg-slate-900/60 rounded-2xl p-4 border border-slate-800">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-display font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Recent Spin History
+          </h3>
+          <button id="clearHistoryBtn" class="text-xs text-slate-500 hover:text-rose-400 transition-colors">Clear History</button>
+        </div>
+        <div id="historyList" class="flex flex-wrap gap-2 min-h-[38px] items-center">
+          <span class="text-xs text-slate-500 italic">No spins yet. Give the wheel a turn!</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- RIGHT COLUMN: Sector Customization & Preset Themes -->
+    <section class="lg:col-span-5 space-y-6">
+      
+      <!-- Sector Customization Box -->
+      <div class="bg-slate-900/80 rounded-3xl p-5 border border-slate-800 shadow-xl backdrop-blur-sm">
+        
+        <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div>
+            <h2 class="text-lg font-display font-bold text-white flex items-center gap-2">
+              <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+              Customize 8 Sectors
+            </h2>
+            <p class="text-xs text-slate-400">Edit sector titles and colors live below.</p>
+          </div>
+
+          <div class="flex items-center space-x-1">
+            <button id="shuffleBtn" title="Shuffle Sector Order & Colors" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all text-xs font-semibold flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+              </svg>
+              Shuffle
+            </button>
+          </div>
+        </div>
+
+        <!-- 8 Sectors Inputs Grid -->
+        <div id="sectorsContainer" class="mt-4 space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
+          <!-- Dynamically populated 8 sector rows -->
+        </div>
+
+        <!-- Action Buttons Footer -->
+        <div class="mt-5 pt-4 border-t border-slate-800 flex items-center justify-between gap-3">
+          <button id="resetDefaultsBtn" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition-all">
+            Reset Defaults
+          </button>
+          
+          <div class="flex items-center gap-2">
+            <button id="presetThemeBtn" class="px-3.5 py-2 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-semibold transition-all">
+              Cycle Color Themes
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Preset Ideas Card -->
+      <div class="bg-slate-900/50 rounded-2xl p-4 border border-slate-800/80">
+        <h3 class="text-xs font-display font-bold text-slate-400 uppercase tracking-wider mb-2">Quick Content Presets</h3>
+        <div class="flex flex-wrap gap-1.5">
+          <button class="preset-load-btn px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 transition-colors" data-preset="classic">🎡 Classic Cash</button>
+          <button class="preset-load-btn px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 transition-colors" data-preset="lunch">🍕 What's for Lunch?</button>
+          <button class="preset-load-btn px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 transition-colors" data-preset="decision">🎯 Yes / No / Maybe</button>
+          <button class="preset-load-btn px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 transition-colors" data-preset="fitness">🏋️ Workout Drills</button>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Winner Modal -->
+  <div id="winnerModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
+    <!-- Confetti Overlay Canvas -->
+    <canvas id="confettiCanvas" class="absolute inset-0 pointer-events-none z-10 w-full h-full"></canvas>
+
+    <div class="relative z-20 max-w-md w-full bg-slate-900 border border-slate-700 rounded-3xl p-6 sm:p-8 text-center shadow-2xl transform scale-90 transition-transform duration-300" id="winnerCard">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-3xl animate-bounce">
+        🏆
+      </div>
+      
+      <p class="text-xs font-bold uppercase tracking-widest text-amber-400 mb-1">We Have A Winner!</p>
+      
+      <!-- Sector Badge -->
+      <div id="winnerColorPill" class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold mb-3 border">
+        <span id="winnerSectorNum" class="font-bold">Sector 1</span>
+      </div>
+
+      <h2 id="winnerTitle" class="text-2xl sm:text-3xl font-display font-black text-white break-words my-2">
+        $1,000
+      </h2>
+
+      <p class="text-slate-400 text-xs mt-2 mb-6">Congratulations! Spin again to test your luck!</p>
+
+      <button id="closeModalBtn" class="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-display font-extrabold text-sm tracking-wide shadow-lg shadow-orange-500/20 active:scale-95 transition-all">
+        Awesome, Spin Again!
+      </button>
+    </div>
+  </div>
+
+  <!-- Help / Info Modal -->
+  <div id="helpModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
+    <div class="max-w-md w-full bg-slate-900 border border-slate-700 rounded-3xl p-6 text-left shadow-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-display font-bold text-white">How to Use</h3>
+        <button id="closeHelpBtn" class="text-slate-400 hover:text-white text-xl">&times;</button>
+      </div>
+      <div class="space-y-3 text-sm text-slate-300">
+        <p>✨ <strong>Spinning:</strong> Click the center <strong>SPIN</strong> hub, the <strong>Spin Wheel</strong> button, or simply click directly anywhere on the wheel.</p>
+        <p>🎨 <strong>Modifying Sectors:</strong> Use the right-side customization panel to edit any of the 8 sector labels and color swatches in real time.</p>
+        <p>💾 <strong>Auto-Save:</strong> All custom titles and color palettes are automatically saved to your browser's local storage.</p>
+        <p>🔊 <strong>Audio:</strong> Synthesized click sounds and win chimes play automatically (toggle on/off with the sound button at top right).</p>
+      </div>
+      <button id="closeHelpBtn2" class="mt-6 w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700">
+        Got it!
+      </button>
+    </div>
+  </div>
+
+  <!-- Application Logic JS -->
+  <script>
+    // --- DEFAULT DATA & STATE ---
+    const DEFAULT_SECTORS = [
+      { label: "Moodle", color: "#EF4444" }, // Red
+      { label: "Howspace", color: "#1E293B" }, // Dark Slate
+      { label: "Thinglink", color: "#F59E0B" }, // Amber
+      { label: "Muu", color: "#10B981" }, // Emerald
+      { label: "Wooclap", color: "#64748B" }, // Slate
+      { label: "Moodle", color: "#3B82F6" }, // Blue
+      { label: "Howspace", color: "#8B5CF6" }, // Purple
+      { label: "Thinglink", color: "#EC4899" }  // Pink
+    ];
+
+    const THEME_PALETTES = [
+      ["#EF4444", "#1E293B", "#F59E0B", "#10B981", "#64748B", "#3B82F6", "#8B5CF6", "#EC4899"], // Classic Neon
+      ["#0284C7", "#0D9488", "#059669", "#65A30D", "#CA8A04", "#D97706", "#DC2626", "#7C3AED"], // Vibrant Rainbow
+      ["#F43F5E", "#FB7185", "#FDA4AF", "#F472B6", "#C084FC", "#A855F7", "#818CF8", "#60A5FA"], // Pastel Glow
+      ["#059669", "#10B981", "#34D399", "#6EE7B7", "#0284C7", "#38BDF8", "#7DD3FC", "#BAE6FD"]  // Ocean Emerald
+    ];
+
+    const PRESETS = {
+      classic: DEFAULT_SECTORS,
+      lunch: [
+        { label: "🍕 Pizza", color: "#EF4444" },
+        { label: "🍔 Burgers", color: "#F59E0B" },
+        { label: "🥗 Salad", color: "#10B981" },
+        { label: "🍣 Sushi", color: "#06B6D4" },
+        { label: "🌮 Tacos", color: "#8B5CF6" },
+        { label: "🍜 Ramen", color: "#EC4899" },
+        { label: "🥪 Sandwich", color: "#F97316" },
+        { label: "🌯 Burrito", color: "#84CC16" }
+      ],
+      decision: [
+        { label: "YES!", color: "#10B981" },
+        { label: "NO", color: "#EF4444" },
+        { label: "MAYBE", color: "#F59E0B" },
+        { label: "ASK AGAIN", color: "#3B82F6" },
+        { label: "DEFINITELY", color: "#8B5CF6" },
+        { label: "NO WAY", color: "#E11D48" },
+        { label: "PROBABLY", color: "#06B6D4" },
+        { label: "THINK AGAIN", color: "#64748B" }
+      ],
+      fitness: [
+        { label: "20 Pushups", color: "#EF4444" },
+        { label: "30 Squats", color: "#F59E0B" },
+        { label: "1 Min Plank", color: "#10B981" },
+        { label: "15 Burpees", color: "#3B82F6" },
+        { label: "50 Jumping Jacks", color: "#8B5CF6" },
+        { label: "Rest 1 Min", color: "#64748B" },
+        { label: "25 Lunges", color: "#EC4899" },
+        { label: "40 Mountain Climbers", color: "#F97316" }
+      ]
+    };
+
+    let sectors = [];
+    let currentThemeIdx = 0;
+    let spinHistory = [];
+    let soundEnabled = true;
+
+    // --- PHYSICS & ANIMATION VARIABLES ---
+    const canvas = document.getElementById('wheelCanvas');
+    const ctx = canvas.getContext('2d');
+    let currentAngle = 0; // In Radians
+    let angularVelocity = 0;
+    let isSpinning = false;
+    let friction = 0.988; // Friction deceleration rate
+    let lastPegIndex = -1;
+    let animFrameId = null;
+
+    // --- AUDIO SYNTHESIS (Web Audio API) ---
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+          audioCtx = new AudioContext();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playTickSound() {
+      if (!soundEnabled) return;
+      initAudio();
+      if (!audioCtx) return;
+
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.04);
+
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.045);
+      } catch (e) {
+        console.warn("Audio error:", e);
+      }
+    }
+
+    function playWinSound() {
+      if (!soundEnabled) return;
+      initAudio();
+      if (!audioCtx) return;
+
+      try {
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        notes.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+
+          const startTime = audioCtx.currentTime + (idx * 0.1);
+          gain.gain.setValueAtTime(0, startTime);
+          gain.gain.linearRampToValueAtTime(0.25, startTime + 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          osc.start(startTime);
+          osc.stop(startTime + 0.45);
+        });
+      } catch (e) {
+        console.warn("Win Audio error:", e);
+      }
+    }
+
+    // --- LOCAL STORAGE PERSISTENCE ---
+    function loadSavedData() {
+      try {
+        const savedSectors = localStorage.getItem('wof_sectors_data');
+        if (savedSectors) {
+          sectors = JSON.parse(savedSectors);
+          if (!Array.isArray(sectors) || sectors.length !== 8) {
+            sectors = JSON.parse(JSON.stringify(DEFAULT_SECTORS));
+          }
+        } else {
+          sectors = JSON.parse(JSON.stringify(DEFAULT_SECTORS));
+        }
+
+        const savedHistory = localStorage.getItem('wof_history');
+        if (savedHistory) {
+          spinHistory = JSON.parse(savedHistory);
+        }
+
+        const savedSound = localStorage.getItem('wof_sound');
+        if (savedSound !== null) {
+          soundEnabled = savedSound === 'true';
+        }
+      } catch (e) {
+        sectors = JSON.parse(JSON.stringify(DEFAULT_SECTORS));
+      }
+    }
+
+    function saveData() {
+      try {
+        localStorage.setItem('wof_sectors_data', JSON.stringify(sectors));
+        localStorage.setItem('wof_history', JSON.stringify(spinHistory));
+        localStorage.setItem('wof_sound', soundEnabled.toString());
+      } catch (e) {
+        console.warn("LocalStorage save error:", e);
+      }
+    }
+
+    // --- WHEEL CANVAS RENDERING ---
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      drawWheel();
+    }
+
+    function drawWheel() {
+      const rect = canvas.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const radius = Math.min(centerX, centerY) - 16; // Margin for outer pegs
+
+      ctx.clearRect(0, 0, width, height);
+
+      const numSectors = sectors.length;
+      const arc = (Math.PI * 2) / numSectors;
+
+      // Draw Sector Slices
+      for (let i = 0; i < numSectors; i++) {
+        const startAngle = currentAngle + i * arc;
+        const endAngle = startAngle + arc;
+        const sector = sectors[i];
+
+        // Slice path
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+        ctx.closePath();
+
+        // Fill Sector
+        ctx.fillStyle = sector.color || '#3B82F6';
+        ctx.fill();
+
+        // Slice Border Line
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Sector Radial Text
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(startAngle + arc / 2);
+
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        
+        // Dynamic Font Sizing & Truncation
+        const fontSize = Math.max(12, Math.min(18, radius / 12));
+        ctx.font = `800 ${fontSize}px 'Outfit', sans-serif`;
+
+        // Calculate contrasting text color (white or dark)
+        const isDark = getLuminance(sector.color) < 0.55;
+        ctx.fillStyle = isDark ? '#FFFFFF' : '#0F172A';
+        ctx.shadowColor = isDark ? 'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.6)';
+        ctx.shadowBlur = 4;
+
+        // Truncate text if too long
+        let text = sector.label || `Sector ${i+1}`;
+        const maxTextWidth = radius - 55;
+        if (ctx.measureText(text).width > maxTextWidth) {
+          while (text.length > 3 && ctx.measureText(text + '…').width > maxTextWidth) {
+            text = text.slice(0, -1);
+          }
+          text += '…';
+        }
+
+        ctx.fillText(text, radius - 28, 0);
+        ctx.restore();
+      }
+
+      // Draw Metallic Outer Rim
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.strokeStyle = '#F59E0B';
+      ctx.lineWidth = 6;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius + 5, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(245, 158, 11, 0.3)';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Draw Metallic Decorative Pegs
+      for (let i = 0; i < numSectors; i++) {
+        const pegAngle = currentAngle + i * arc;
+        const pegX = centerX + Math.cos(pegAngle) * radius;
+        const pegY = centerY + Math.sin(pegAngle) * radius;
+
+        ctx.beginPath();
+        ctx.arc(pegX, pegY, 5, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fill();
+        ctx.strokeStyle = '#D97706';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Peg Highlight Dot
+        ctx.beginPath();
+        ctx.arc(pegX - 1, pegY - 1, 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFF';
+        ctx.fill();
+      }
+    }
+
+    // Helper: Calculate brightness of hex color for text contrast
+    function getLuminance(hex) {
+      if (!hex || hex[0] !== '#') return 0;
+      const r = parseInt(hex.slice(1, 3), 16) || 0;
+      const g = parseInt(hex.slice(3, 5), 16) || 0;
+      const b = parseInt(hex.slice(5, 7), 16) || 0;
+      return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    }
+
+    // --- SPIN & PHYSICS ANIMATION LOOP ---
+    function triggerSpin() {
+      if (isSpinning) return;
+      initAudio();
+
+      isSpinning = true;
+      document.getElementById('spinBtn').disabled = true;
+      document.getElementById('bigSpinBtn').disabled = true;
+      document.getElementById('statusText').innerText = "Spinning... Good luck!";
+      document.getElementById('statusText').className = "text-xs text-amber-400 font-semibold animate-pulse";
+
+      // Random initial velocity (between 0.35 and 0.55 rad/frame)
+      angularVelocity = Math.random() * 0.2 + 0.38;
+      
+      lastPegIndex = -1;
+      animateLoop();
+    }
+
+    function animateLoop() {
+      if (!isSpinning) return;
+
+      currentAngle += angularVelocity;
+      angularVelocity *= friction;
+
+      // Detect Peg Crossing Pointer at 12 o'clock (270 degrees / 1.5 * PI)
+      const pointerAngle = 1.5 * Math.PI;
+      const numSectors = sectors.length;
+      const arc = (Math.PI * 2) / numSectors;
+
+      // Current angle normalized 0 to 2PI
+      const normalizedAngle = (currentAngle % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+      
+      // Calculate active sector under top pointer
+      // Top pointer is 3PI/2.
+      let relativeAngle = (pointerAngle - normalizedAngle) % (Math.PI * 2);
+      if (relativeAngle < 0) relativeAngle += Math.PI * 2;
+      
+      const currentSectorIndex = Math.floor(relativeAngle / arc);
+      
+      // Check peg tick threshold
+      const pegIndex = Math.floor((relativeAngle + arc / 2) / arc) % numSectors;
+      if (pegIndex !== lastPegIndex) {
+        lastPegIndex = pegIndex;
+        playTickSound();
+        triggerFlapperDeflect();
+      }
+
+      drawWheel();
+
+      // Check if wheel stopped
+      if (angularVelocity < 0.0015) {
+        isSpinning = false;
+        angularVelocity = 0;
+        document.getElementById('spinBtn').disabled = false;
+        document.getElementById('bigSpinBtn').disabled = false;
+
+        // Final Winner Calculation
+        onSpinComplete(currentSectorIndex);
+        return;
+      }
+
+      animFrameId = requestAnimationFrame(animateLoop);
+    }
+
+    function triggerFlapperDeflect() {
+      const flapper = document.getElementById('flapper');
+      flapper.classList.remove('animate-bounce-short');
+      // Force reflow
+      void flapper.offsetWidth;
+      flapper.classList.add('animate-bounce-short');
+    }
+
+    function onSpinComplete(winnerIndex) {
+      const winner = sectors[winnerIndex];
+      document.getElementById('statusText').innerText = `Landed on: ${winner.label}!`;
+      document.getElementById('statusText').className = "text-xs text-emerald-400 font-semibold";
+
+      // Add to History
+      addSpinToHistory(winner, winnerIndex);
+
+      // Play Victory Chime & Show Modal
+      playWinSound();
+      showWinnerModal(winner, winnerIndex);
+    }
+
+    // --- WINNER MODAL & CONFETTI ---
+    function showWinnerModal(winner, index) {
+      const modal = document.getElementById('winnerModal');
+      const card = document.getElementById('winnerCard');
+      const title = document.getElementById('winnerTitle');
+      const pill = document.getElementById('winnerColorPill');
+      const sectorNum = document.getElementById('winnerSectorNum');
+
+      title.innerText = winner.label;
+      sectorNum.innerText = `Sector #${index + 1}`;
+      pill.style.backgroundColor = winner.color;
+      
+      const isDark = getLuminance(winner.color) < 0.55;
+      pill.style.color = isDark ? '#FFFFFF' : '#0F172A';
+      pill.style.borderColor = 'rgba(255,255,255,0.3)';
+
+      modal.classList.remove('opacity-0', 'pointer-events-none');
+      card.classList.remove('scale-90');
+      card.classList.add('scale-100');
+
+      startConfetti();
+    }
+
+    function hideWinnerModal() {
+      const modal = document.getElementById('winnerModal');
+      const card = document.getElementById('winnerCard');
+
+      modal.classList.add('opacity-0', 'pointer-events-none');
+      card.classList.remove('scale-100');
+      card.classList.add('scale-90');
+      stopConfetti();
+    }
+
+    // Lightweight HTML5 Canvas Confetti System
+    let confettiActive = false;
+    let confettiParticles = [];
+    const confCanvas = document.getElementById('confettiCanvas');
+    const confCtx = confCanvas.getContext('2d');
+
+    function startConfetti() {
+      confCanvas.width = window.innerWidth;
+      confCanvas.height = window.innerHeight;
+      confettiParticles = [];
+      
+      const colors = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899', '#FFFFFF'];
+      for (let i = 0; i < 90; i++) {
+        confettiParticles.push({
+          x: Math.random() * confCanvas.width,
+          y: Math.random() * confCanvas.height - confCanvas.height,
+          size: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vx: (Math.random() - 0.5) * 3,
+          vy: Math.random() * 4 + 2,
+          rotation: Math.random() * 360,
+          rotSpeed: (Math.random() - 0.5) * 8
+        });
+      }
+
+      confettiActive = true;
+      runConfettiLoop();
+    }
+
+    function runConfettiLoop() {
+      if (!confettiActive) {
+        confCtx.clearRect(0, 0, confCanvas.width, confCanvas.height);
+        return;
+      }
+
+      confCtx.clearRect(0, 0, confCanvas.width, confCanvas.height);
+
+      confettiParticles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rotation += p.rotSpeed;
+
+        if (p.y > confCanvas.height) {
+          p.y = -10;
+          p.x = Math.random() * confCanvas.width;
+        }
+
+        confCtx.save();
+        confCtx.translate(p.x, p.y);
+        confCtx.rotate((p.rotation * Math.PI) / 180);
+        confCtx.fillStyle = p.color;
+        confCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+        confCtx.restore();
+      });
+
+      requestAnimationFrame(runConfettiLoop);
+    }
+
+    function stopConfetti() {
+      confettiActive = false;
+    }
+
+    // --- SPIN HISTORY MANAGEMENT ---
+    function addSpinToHistory(winner, index) {
+      spinHistory.unshift({
+        label: winner.label,
+        color: winner.color,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+
+      if (spinHistory.length > 10) spinHistory.pop();
+      saveData();
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const container = document.getElementById('historyList');
+      if (spinHistory.length === 0) {
+        container.innerHTML = `<span class="text-xs text-slate-500 italic">No spins yet. Give the wheel a turn!</span>`;
+        return;
+      }
+
+      container.innerHTML = spinHistory.map(item => {
+        const isDark = getLuminance(item.color) < 0.55;
+        const textColor = isDark ? '#FFFFFF' : '#0F172A';
+        return `
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold shadow-sm border border-white/10" style="background-color: ${item.color}; color: ${textColor};">
+            <span>${escapeHtml(item.label)}</span>
+            <span class="opacity-60 text-[10px] font-normal">(${item.time})</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function clearHistory() {
+      spinHistory = [];
+      saveData();
+      renderHistory();
+    }
+
+    // --- SECTOR CUSTOMIZATION PANEL UI ---
+    function renderCustomizationPanel() {
+      const container = document.getElementById('sectorsContainer');
+      container.innerHTML = '';
+
+      sectors.forEach((sector, i) => {
+        const row = document.createElement('div');
+        row.className = "flex items-center gap-2.5 p-2 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-slate-600 transition-all";
+
+        row.innerHTML = `
+          <div class="w-6 text-center text-xs font-bold text-slate-400 select-none">#${i + 1}</div>
+          
+          <!-- Color Picker Input -->
+          <div class="relative flex-shrink-0">
+            <input type="color" value="${sector.color}" data-index="${i}" class="color-picker-input w-8 h-8 rounded-lg bg-transparent border-0 cursor-pointer p-0" />
+          </div>
+
+          <!-- Text Input -->
+          <input type="text" value="${escapeHtml(sector.label)}" data-index="${i}" placeholder="Sector Title..." class="label-text-input flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium" />
+        `;
+
+        container.appendChild(row);
+      });
+
+      // Attach Event Listeners to Inputs
+      container.querySelectorAll('.label-text-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+          const idx = parseInt(e.target.getAttribute('data-index'), 10);
+          sectors[idx].label = e.target.value;
+          drawWheel();
+          saveData();
+        });
+      });
+
+      container.querySelectorAll('.color-picker-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+          const idx = parseInt(e.target.getAttribute('data-index'), 10);
+          sectors[idx].color = e.target.value;
+          drawWheel();
+          saveData();
+        });
+      });
+    }
+
+    // Helper: Prevent XSS
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    // --- QUICK ACTION CONTROLS ---
+    function shuffleSectors() {
+      // Shuffle sector order
+      for (let i = sectors.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [sectors[i], sectors[j]] = [sectors[j], sectors[i]];
+      }
+      renderCustomizationPanel();
+      drawWheel();
+      saveData();
+    }
+
+    function cycleTheme() {
+      currentThemeIdx = (currentThemeIdx + 1) % THEME_PALETTES.length;
+      const palette = THEME_PALETTES[currentThemeIdx];
+      sectors.forEach((sec, idx) => {
+        sec.color = palette[idx % palette.length];
+      });
+      renderCustomizationPanel();
+      drawWheel();
+      saveData();
+    }
+
+    function resetDefaults() {
+      sectors = JSON.parse(JSON.stringify(DEFAULT_SECTORS));
+      renderCustomizationPanel();
+      drawWheel();
+      saveData();
+    }
+
+    function loadPreset(presetKey) {
+      if (PRESETS[presetKey]) {
+        sectors = JSON.parse(JSON.stringify(PRESETS[presetKey]));
+        renderCustomizationPanel();
+        drawWheel();
+        saveData();
+      }
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      saveData();
+      updateSoundUI();
+    }
+
+    function updateSoundUI() {
+      const icon = document.getElementById('soundIcon');
+      const label = document.getElementById('soundLabel');
+      
+      if (soundEnabled) {
+        label.innerText = 'Sound ON';
+        icon.innerHTML = `
+          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+          </svg>
+        `;
+      } else {
+        label.innerText = 'Muted';
+        icon.innerHTML = `
+          <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+          </svg>
+        `;
+      }
+    }
+
+    // --- INITIALIZATION & EVENT LISTENERS ---
+    window.addEventListener('load', () => {
+      loadSavedData();
+      renderCustomizationPanel();
+      renderHistory();
+      updateSoundUI();
+
+      resizeCanvas();
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+        if (confettiActive) {
+          confCanvas.width = window.innerWidth;
+          confCanvas.height = window.innerHeight;
+        }
+      });
+
+      // Interactive Click Elements
+      document.getElementById('spinBtn').addEventListener('click', triggerSpin);
+      document.getElementById('bigSpinBtn').addEventListener('click', triggerSpin);
+      document.getElementById('wheelCanvas').addEventListener('click', triggerSpin);
+
+      document.getElementById('shuffleBtn').addEventListener('click', shuffleSectors);
+      document.getElementById('presetThemeBtn').addEventListener('click', cycleTheme);
+      document.getElementById('resetDefaultsBtn').addEventListener('click', resetDefaults);
+      document.getElementById('clearHistoryBtn').addEventListener('click', clearHistory);
+      document.getElementById('soundToggleBtn').addEventListener('click', toggleSound);
+
+      // Preset Buttons Listener
+      document.querySelectorAll('.preset-load-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const key = e.currentTarget.getAttribute('data-preset');
+          loadPreset(key);
+        });
+      });
+
+      // Modals
+      document.getElementById('closeModalBtn').addEventListener('click', hideWinnerModal);
+      
+      const helpModal = document.getElementById('helpModal');
+      document.getElementById('helpBtn').addEventListener('click', () => {
+        helpModal.classList.remove('opacity-0', 'pointer-events-none');
+      });
+      const closeHelp = () => helpModal.classList.add('opacity-0', 'pointer-events-none');
+      document.getElementById('closeHelpBtn').addEventListener('click', closeHelp);
+      document.getElementById('closeHelpBtn2').addEventListener('click', closeHelp);
+    });
+  </script>
+</body>
+</html>
