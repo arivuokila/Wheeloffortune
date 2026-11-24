@@ -1,324 +1,487 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<html lang="fi">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wheel of Fortune</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            display: ['Outfit', 'sans-serif'],
-          },
-          animation: {
-            'bounce-peg': 'bouncePeg 0.15s ease-in-out',
-          },
-          keyframes: {
-            bouncePeg: {
-              '0%, 100%': { transform: 'translateY(0) rotate(0deg)' },
-              '50%': { transform: 'translateY(-5px) rotate(-14deg)' },
-            }
-          }
-        }
-      }
+  <title>Digipedapyörä</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
-  </script>
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .app {
+      position: relative;
+      width: 100%;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(12px, 2.5vh, 24px);
+      padding: 16px;
+    }
+
+    .headline {
+      font-size: clamp(1.75rem, 4.5vw, 2.85rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #f8fafc;
+      text-align: center;
+      text-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+      line-height: 1.15;
+    }
+
+    .wheel-stage {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    canvas#wheelCanvas {
+      display: block;
+      cursor: pointer;
+      filter: drop-shadow(0 20px 35px rgba(0, 0, 0, 0.55));
+    }
+
+    canvas#wheelCanvas.spinning {
+      cursor: default;
+    }
+
+    .result-banner {
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .result-pill {
+      padding: 10px 26px;
+      border-radius: 9999px;
+      background: rgba(30, 41, 59, 0.92);
+      border: 2px solid #38bdf8;
+      color: #f8fafc;
+      font-size: clamp(1.05rem, 2.5vw, 1.35rem);
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+      opacity: 0;
+      transform: translateY(8px) scale(0.96);
+      transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+      pointer-events: none;
+      text-align: center;
+    }
+
+    .result-pill.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    canvas#confettiCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 20;
+    }
+  </style>
 </head>
-<body class="h-full w-full bg-[#0f172a] text-slate-100 flex flex-col items-center justify-center overflow-hidden select-none relative m-0 p-0">
+<body>
+  <main class="app">
+    <h1 class="headline">Digipedapyörä</h1>
 
-  <!-- Main Container -->
-  <main class="w-full h-full max-w-4xl max-h-[100vh] p-4 flex flex-col items-center justify-center relative">
-    
-    <!-- Pointer / Flapper Indicator at 12 o'clock -->
-    <div class="relative w-full max-w-[500px] aspect-square flex items-center justify-center">
-      
-      <div id="pointerContainer" class="absolute -top-4 z-30 left-1/2 -translate-x-1/2 pointer-events-none">
-        <div id="flapper" class="w-8 h-11 drop-shadow-[0_4px_12px_rgba(0,0,0,0.7)] origin-top transition-transform duration-75">
-          <svg viewBox="0 0 36 48" fill="none" class="w-full h-full">
-            <path d="M18 46L3 10C1 5 5 0 11 0H25C31 0 35 5 33 10L18 46Z" fill="url(#pointerGrad)" stroke="#F59E0B" stroke-width="2.5"/>
-            <circle cx="18" cy="11" r="5" fill="#FFF" opacity="0.9"/>
-            <defs>
-              <linearGradient id="pointerGrad" x1="18" y1="0" x2="18" y2="46" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#EF4444"/>
-                <stop offset="1" stop-color="#B91C1C"/>
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-      </div>
-
-      <!-- HTML5 Wheel Canvas -->
-      <canvas id="wheelCanvas" class="w-full h-full rounded-full cursor-pointer touch-none drop-shadow-[0_0_40px_rgba(0,0,0,0.6)]"></canvas>
-
-      <!-- Center SPIN Button -->
-      <button id="spinBtn" aria-label="Spin the wheel" class="absolute z-20 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 border-4 border-amber-400/90 shadow-[0_0_30px_rgba(245,158,11,0.5),inset_0_2px_4px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95 transition-all flex flex-col items-center justify-center group cursor-pointer focus:outline-none">
-        <span id="centerBtnText" class="text-amber-400 font-display font-black text-lg sm:text-xl tracking-wider group-hover:text-amber-300 transition-colors drop-shadow">SPIN</span>
-        <span id="centerSubText" class="text-[9px] text-slate-400 font-bold uppercase tracking-widest -mt-0.5">SPACE</span>
-      </button>
-
+    <div class="wheel-stage">
+      <canvas id="wheelCanvas" aria-label="Digipedapyörä - klikkaa pyörittääksesi"></canvas>
     </div>
 
-    <!-- Floating Winner Result Card -->
-    <div id="winnerCard" class="absolute bottom-6 sm:bottom-10 z-30 opacity-0 translate-y-6 pointer-events-none transition-all duration-400 ease-out flex flex-col items-center">
-      <div id="winnerBadge" class="px-6 py-3 rounded-2xl bg-slate-800/90 border border-slate-700/80 shadow-2xl backdrop-blur-md flex items-center space-x-3">
-        <span class="text-xl">🏆</span>
-        <div class="flex flex-col text-left">
-          <span class="text-[10px] uppercase font-bold tracking-widest text-amber-400">Winning Result</span>
-          <span id="winnerTitle" class="text-lg sm:text-xl font-display font-black text-white leading-tight">--</span>
-        </div>
-      </div>
+    <div class="result-banner" aria-live="polite">
+      <div id="resultPill" class="result-pill"></div>
     </div>
-
   </main>
 
-  <!-- JavaScript Logic & Configuration -->
-  <script>
-    // =========================================================================
-    // ⚙️ IN-CODE CONFIGURATION & SECTORS CUSTOMIZATION
-    // =========================================================================
-    
-    // Physics & General Settings
-    const WHEEL_CONFIG = {
-      friction: 0.988,         // Deceleration rate (0.980 = fast stop, 0.995 = long spin)
-      minInitialSpeed: 0.38,   // Minimum spin strength (radians per frame)
-      maxInitialSpeed: 0.58,   // Maximum spin strength (radians per frame)
-      centerButtonText: "SPIN",
-      centerSubText: "SPACE",  // Subtext under SPIN button
-      bezelColor: "#F59E0B",   // Outer rim border color
-      pegColor: "#FFFFFF"      // Peg color
-    };
+  <canvas id="confettiCanvas"></canvas>
 
-    // 8 Sector Definitions: Modify labels, background colors (bg), or text colors (text)
+  <script>
+    // =========================================================
+    // 1. CUSTOMIZE THE 8 SECTORS HERE
+    // =========================================================
     const SECTORS = [
-      { label: "Moodle",       bg: "#EF4444", text: "#FFFFFF" },
-      { label: "Howspace",     bg: "#1E293B", text: "#FFFFFF" },
-      { label: "Wooclap",      bg: "#F59E0B", text: "#0F172A" },
-      { label: "AI",       bg: "#10B981", text: "#FFFFFF" },
-      { label: "Thinglink",  bg: "#64748B", text: "#FFFFFF" },
-      { label: "Pipari",         bg: "#3B82F6", text: "#FFFFFF" },
-      { label: "DIGIPEDAMENTORI",      bg: "#8B5CF6", text: "#FFFFFF" },
-      { label: "Pipari",       bg: "#EC4899", text: "#FFFFFF" }
+      { label: "Howspace", color: "#ef4444", textColor: "#ffffff" },
+      { label: "Moodle", color: "#f97316", textColor: "#ffffff" },
+      { label: "Digipeda", color: "#eab308", textColor: "#0f172a" },
+      { label: "Wooclap", color: "#22c55e", textColor: "#ffffff" },
+      { label: "Thinglink", color: "#06b6d4", textColor: "#0f172a" },
+      { label: "Pipari", color: "#3b82f6", textColor: "#ffffff" },
+      { label: "AI", color: "#8b5cf6", textColor: "#ffffff" },
+      { label: "Pipari", color: "#ec4899", textColor: "#ffffff" }
     ];
 
-    // =========================================================================
-    // 🌀 WHEEL SYSTEM LOGIC (Do not edit unless changing physics engine)
-    // =========================================================================
+    // =========================================================
+    // 2. WHEEL SETTINGS
+    // =========================================================
+    const WHEEL_CONFIG = {
+      centerButtonText: "PYÖRÄYTÄ",
+      spinDurationMin: 4200, // milliseconds
+      spinDurationMax: 6000, // milliseconds
+      minRotations: 5,
+      maxRotations: 10,
+      showConfetti: true
+    };
 
-    const canvas = document.getElementById('wheelCanvas');
-    const ctx = canvas.getContext('2d');
-    const spinBtn = document.getElementById('spinBtn');
-    const flapper = document.getElementById('flapper');
-    const winnerCard = document.getElementById('winnerCard');
-    const winnerTitle = document.getElementById('winnerTitle');
+    // =========================================================
+    // WHEEL ENGINE (NO EXTERNAL DEPENDENCIES)
+    // =========================================================
+    const canvas = document.getElementById("wheelCanvas");
+    const ctx = canvas.getContext("2d");
+    const resultPill = document.getElementById("resultPill");
+    const confettiCanvas = document.getElementById("confettiCanvas");
+    const confettiCtx = confettiCanvas.getContext("2d");
 
-    let currentAngle = 0; // Current rotation angle in radians
-    let angularVelocity = 0;
+    const TWO_PI = Math.PI * 2;
+    const POINTER_ANGLE = (3 * Math.PI) / 2; // Top (12 o'clock)
+    const sliceAngle = TWO_PI / SECTORS.length;
+
+    let currentAngle = 0;
     let isSpinning = false;
+    let spinStartTime = 0;
+    let spinDuration = 0;
+    let startAngle = 0;
+    let targetAngle = 0;
     let lastPegIndex = -1;
 
-    // Set Up UI Labels from Config
-    document.getElementById('centerBtnText').innerText = WHEEL_CONFIG.centerButtonText;
-    document.getElementById('centerSubText').innerText = WHEEL_CONFIG.centerSubText;
+    // Flapper spring physics
+    let flapperAngle = 0;
+    let flapperVelocity = 0;
 
-    // Handle High-DPI Canvas Resizing
-    function resizeCanvas() {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      ctx.scale(dpr, dpr);
+    // Confetti particles
+    let particles = [];
+
+    function resizeCanvases() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const maxSize = Math.min(
+        window.innerWidth - 32,
+        window.innerHeight - 175,
+        540
+      );
+      const size = Math.max(240, Math.floor(maxSize));
+
+      canvas.style.width = `${size}px`;
+      canvas.style.height = `${size}px`;
+      canvas.width = size * dpr;
+      canvas.height = size * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      confettiCanvas.width = window.innerWidth * dpr;
+      confettiCanvas.height = window.innerHeight * dpr;
+      confettiCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
       drawWheel();
     }
 
-    // Draw Wheel on Canvas
-    function drawWheel() {
-      const rect = canvas.getBoundingClientRect();
-      const width = rect.width;
-      const height = rect.height;
-      const centerX = width / 2;
-      const centerY = height / 2;
-      const radius = Math.min(centerX, centerY) - 18;
-
-      ctx.clearRect(0, 0, width, height);
-
-      const numSectors = SECTORS.length;
-      const arc = (Math.PI * 2) / numSectors;
-
-      // Draw Sector Wedges
-      for (let i = 0; i < numSectors; i++) {
-        const startAngle = currentAngle + i * arc;
-        const endAngle = startAngle + arc;
-        const sector = SECTORS[i];
-
-        // Slice Path
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-        ctx.closePath();
-
-        // Fill & Stroke
-        ctx.fillStyle = sector.bg || '#3B82F6';
-        ctx.fill();
-
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Sector Radial Text
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(startAngle + arc / 2);
-
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-        
-        // Responsive Font Size
-        const fontSize = Math.max(13, Math.min(20, radius / 11));
-        ctx.font = `800 ${fontSize}px 'Outfit', sans-serif`;
-
-        ctx.fillStyle = sector.text || '#FFFFFF';
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-        ctx.shadowBlur = 4;
-
-        // Truncate Text if needed
-        let text = sector.label || `Sector ${i + 1}`;
-        const maxTextWidth = radius - 55;
-        if (ctx.measureText(text).width > maxTextWidth) {
-          while (text.length > 3 && ctx.measureText(text + '…').width > maxTextWidth) {
-            text = text.slice(0, -1);
-          }
-          text += '…';
-        }
-
-        ctx.fillText(text, radius - 28, 0);
-        ctx.restore();
-      }
-
-      // Draw Outer Bezel Rim
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-      ctx.strokeStyle = WHEEL_CONFIG.bezelColor;
-      ctx.lineWidth = 7;
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius + 5, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(245, 158, 11, 0.3)';
-      ctx.lineWidth = 3;
-      ctx.stroke();
-
-      // Draw Decorative Pegs
-      for (let i = 0; i < numSectors; i++) {
-        const pegAngle = currentAngle + i * arc;
-        const pegX = centerX + Math.cos(pegAngle) * radius;
-        const pegY = centerY + Math.sin(pegAngle) * radius;
-
-        ctx.beginPath();
-        ctx.arc(pegX, pegY, 5, 0, Math.PI * 2);
-        ctx.fillStyle = WHEEL_CONFIG.pegColor;
-        ctx.fill();
-        ctx.strokeStyle = '#D97706';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
+    function normalizeAngle(angle) {
+      return ((angle % TWO_PI) + TWO_PI) % TWO_PI;
     }
 
-    // Trigger Spin Physics
+    function getSectorIndexAtPointer(wheelAngle) {
+      const relative = normalizeAngle(POINTER_ANGLE - wheelAngle);
+      return Math.floor(relative / sliceAngle) % SECTORS.length;
+    }
+
+    function drawWheel() {
+      const size = parseFloat(canvas.style.width);
+      const cx = size / 2;
+      const cy = size / 2 + 8; // Slight downward offset to give top pointer room
+      const outerRadius = size * 0.45;
+      const wheelRadius = outerRadius * 0.92;
+      const hubRadius = wheelRadius * 0.21;
+
+      ctx.clearRect(0, 0, size, size);
+
+      // Outer metallic bezel
+      const bezelGrad = ctx.createRadialGradient(
+        cx, cy, wheelRadius * 0.95,
+        cx, cy, outerRadius
+      );
+      bezelGrad.addColorStop(0, "#1e293b");
+      bezelGrad.addColorStop(0.5, "#475569");
+      bezelGrad.addColorStop(1, "#0f172a");
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, outerRadius, 0, TWO_PI);
+      ctx.fillStyle = bezelGrad;
+      ctx.fill();
+
+      // Draw sectors
+      SECTORS.forEach((sector, i) => {
+        const a0 = currentAngle + i * sliceAngle;
+        const a1 = a0 + sliceAngle;
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, wheelRadius, a0, a1);
+        ctx.closePath();
+        ctx.fillStyle = sector.color;
+        ctx.fill();
+
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(15, 23, 42, 0.45)";
+        ctx.stroke();
+
+        // Sector label
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(a0 + sliceAngle / 2);
+
+        const textRadius = wheelRadius * 0.62;
+        const maxTextWidth = wheelRadius * 0.56;
+        let fontSize = Math.max(12, Math.round(wheelRadius * 0.082));
+        ctx.font = `700 ${fontSize}px system-ui, -apple-system, sans-serif`;
+
+        while (ctx.measureText(sector.label).width > maxTextWidth && fontSize > 10) {
+          fontSize -= 1;
+          ctx.font = `700 ${fontSize}px system-ui, -apple-system, sans-serif`;
+        }
+
+        ctx.fillStyle = sector.textColor || "#ffffff";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(sector.label, textRadius, 0, maxTextWidth);
+        ctx.restore();
+      });
+
+      // Subtle inner shadow ring on wheel
+      const innerShadow = ctx.createRadialGradient(
+        cx, cy, wheelRadius * 0.82,
+        cx, cy, wheelRadius
+      );
+      innerShadow.addColorStop(0, "rgba(0,0,0,0)");
+      innerShadow.addColorStop(1, "rgba(0,0,0,0.22)");
+      ctx.beginPath();
+      ctx.arc(cx, cy, wheelRadius, 0, TWO_PI);
+      ctx.fillStyle = innerShadow;
+      ctx.fill();
+
+      // Rim pegs at sector boundaries
+      const pegRadius = Math.max(3.5, outerRadius * 0.022);
+      const pegOrbit = (wheelRadius + outerRadius) / 2;
+
+      for (let i = 0; i < SECTORS.length; i++) {
+        const pegAngle = currentAngle + i * sliceAngle;
+        const px = cx + Math.cos(pegAngle) * pegOrbit;
+        const py = cy + Math.sin(pegAngle) * pegOrbit;
+
+        ctx.beginPath();
+        ctx.arc(px, py, pegRadius, 0, TWO_PI);
+        ctx.fillStyle = "#e2e8f0";
+        ctx.fill();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = "#0f172a";
+        ctx.stroke();
+      }
+
+      // Center SPIN hub
+      const hubGrad = ctx.createLinearGradient(
+        cx - hubRadius, cy - hubRadius,
+        cx + hubRadius, cy + hubRadius
+      );
+      hubGrad.addColorStop(0, "#1e293b");
+      hubGrad.addColorStop(1, "#0f172a");
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, hubRadius, 0, TWO_PI);
+      ctx.fillStyle = hubGrad;
+      ctx.fill();
+      ctx.lineWidth = 3.5;
+      ctx.strokeStyle = "#f8fafc";
+      ctx.stroke();
+
+      const btnFontSize = Math.max(10, Math.round(hubRadius * 0.25));
+      ctx.font = `800 ${btnFontSize}px system-ui, -apple-system, sans-serif`;
+      ctx.fillStyle = isSpinning ? "#94a3b8" : "#f8fafc";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(WHEEL_CONFIG.centerButtonText, cx, cy, hubRadius * 1.7);
+
+      // Top spring-loaded pointer / flapper
+      drawPointer(cx, cy - outerRadius - 4, outerRadius);
+    }
+
+    function drawPointer(pivotX, pivotY, outerRadius) {
+      const pointerLength = Math.max(26, outerRadius * 0.17);
+      const pointerWidth = Math.max(18, outerRadius * 0.11);
+
+      ctx.save();
+      ctx.translate(pivotX, pivotY);
+      ctx.rotate(flapperAngle);
+
+      ctx.shadowColor = "rgba(0, 0, 0, 0.45)";
+      ctx.shadowBlur = 8;
+      ctx.shadowOffsetY = 3;
+
+      ctx.beginPath();
+      ctx.moveTo(-pointerWidth / 2, 0);
+      ctx.lineTo(pointerWidth / 2, 0);
+      ctx.lineTo(0, pointerLength);
+      ctx.closePath();
+
+      ctx.fillStyle = "#f8fafc";
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#0f172a";
+      ctx.stroke();
+
+      // Pivot cap
+      ctx.beginPath();
+      ctx.arc(0, 2, pointerWidth * 0.28, 0, TWO_PI);
+      ctx.fillStyle = "#38bdf8";
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    // Quintic ease-out for natural deceleration
+    function easeOutQuint(t) {
+      return 1 - Math.pow(1 - t, 5);
+    }
+
     function triggerSpin() {
       if (isSpinning) return;
 
       isSpinning = true;
-      spinBtn.disabled = true;
+      canvas.classList.add("spinning");
+      resultPill.classList.remove("visible");
 
-      // Hide Winner Card when new spin starts
-      winnerCard.classList.add('opacity-0', 'translate-y-6', 'pointer-events-none');
+      const rotations =
+        WHEEL_CONFIG.minRotations +
+        Math.random() * (WHEEL_CONFIG.maxRotations - WHEEL_CONFIG.minRotations);
+      const extraOffset = Math.random() * TWO_PI;
 
-      // Set Random Angular Velocity
-      const speedRange = WHEEL_CONFIG.maxInitialSpeed - WHEEL_CONFIG.minInitialSpeed;
-      angularVelocity = Math.random() * speedRange + WHEEL_CONFIG.minInitialSpeed;
-      
-      lastPegIndex = -1;
-      animateLoop();
+      startAngle = normalizeAngle(currentAngle);
+      targetAngle = startAngle + rotations * TWO_PI + extraOffset;
+      spinDuration =
+        WHEEL_CONFIG.spinDurationMin +
+        Math.random() * (WHEEL_CONFIG.spinDurationMax - WHEEL_CONFIG.spinDurationMin);
+      spinStartTime = performance.now();
+      lastPegIndex = getSectorIndexAtPointer(startAngle);
     }
 
-    // Animation & Physics Loop
-    function animateLoop() {
-      if (!isSpinning) return;
+    function spawnConfetti() {
+      if (!WHEEL_CONFIG.showConfetti) return;
+      const colors = SECTORS.map((s) => s.color);
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight * 0.45;
 
-      currentAngle += angularVelocity;
-      angularVelocity *= WHEEL_CONFIG.friction;
-
-      // Detect Peg Deflection at top pointer (270° / 1.5 * PI)
-      const pointerAngle = 1.5 * Math.PI;
-      const numSectors = SECTORS.length;
-      const arc = (Math.PI * 2) / numSectors;
-
-      const normalizedAngle = (currentAngle % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
-      let relativeAngle = (pointerAngle - normalizedAngle) % (Math.PI * 2);
-      if (relativeAngle < 0) relativeAngle += Math.PI * 2;
-      
-      const currentSectorIndex = Math.floor(relativeAngle / arc);
-
-      const pegIndex = Math.floor((relativeAngle + arc / 2) / arc) % numSectors;
-      if (pegIndex !== lastPegIndex) {
-        lastPegIndex = pegIndex;
-        triggerPegBounce();
+      for (let i = 0; i < 85; i++) {
+        const angle = Math.random() * TWO_PI;
+        const speed = 4 + Math.random() * 9;
+        particles.push({
+          x: cx,
+          y: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 4,
+          size: 6 + Math.random() * 6,
+          color: colors[i % colors.length],
+          rotation: Math.random() * TWO_PI,
+          vRot: (Math.random() - 0.5) * 0.25,
+          alpha: 1
+        });
       }
+    }
+
+    function updateConfetti() {
+      if (particles.length === 0) return;
+
+      confettiCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.28; // Gravity
+        p.vx *= 0.985;
+        p.rotation += p.vRot;
+        p.alpha -= 0.012;
+
+        if (p.alpha <= 0 || p.y > window.innerHeight + 20) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        confettiCtx.save();
+        confettiCtx.translate(p.x, p.y);
+        confettiCtx.rotate(p.rotation);
+        confettiCtx.globalAlpha = Math.max(0, p.alpha);
+        confettiCtx.fillStyle = p.color;
+        confettiCtx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+        confettiCtx.restore();
+      }
+    }
+
+    function animate(now) {
+      if (isSpinning) {
+        const elapsed = now - spinStartTime;
+        const progress = Math.min(elapsed / spinDuration, 1);
+        const eased = easeOutQuint(progress);
+
+        currentAngle = startAngle + (targetAngle - startAngle) * eased;
+
+        // Detect peg crossings to flick the flapper
+        const currentPegIndex = getSectorIndexAtPointer(currentAngle);
+        if (currentPegIndex !== lastPegIndex) {
+          flapperVelocity = -0.32;
+          lastPegIndex = currentPegIndex;
+        }
+
+        if (progress >= 1) {
+          isSpinning = false;
+          canvas.classList.remove("spinning");
+          currentAngle = normalizeAngle(targetAngle);
+
+          const winner = SECTORS[getSectorIndexAtPointer(currentAngle)];
+          resultPill.textContent = winner.label;
+          resultPill.style.borderColor = winner.color;
+          resultPill.classList.add("visible");
+          spawnConfetti();
+        }
+      }
+
+      // Spring-damper restoration for top flapper
+      const springForce = -0.22 * flapperAngle;
+      flapperVelocity = (flapperVelocity + springForce) * 0.8;
+      flapperAngle += flapperVelocity;
 
       drawWheel();
+      updateConfetti();
+      requestAnimationFrame(animate);
+    }
 
-      // Check for Wheel Stop
-      if (angularVelocity < 0.0015) {
-        isSpinning = false;
-        angularVelocity = 0;
-        spinBtn.disabled = false;
-        onSpinComplete(currentSectorIndex);
-        return;
+    // Event listeners
+    canvas.addEventListener("click", triggerSpin);
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        triggerSpin();
       }
-
-      requestAnimationFrame(animateLoop);
-    }
-
-    // Flapper Bounce Animation
-    function triggerPegBounce() {
-      flapper.classList.remove('animate-bounce-peg');
-      void flapper.offsetWidth; // Force reflow
-      flapper.classList.add('animate-bounce-peg');
-    }
-
-    // Show Winning Result Card
-    function onSpinComplete(winnerIndex) {
-      const winner = SECTORS[winnerIndex];
-      winnerTitle.innerText = winner.label;
-
-      winnerCard.classList.remove('opacity-0', 'translate-y-6', 'pointer-events-none');
-    }
-
-    // Event Listeners
-    window.addEventListener('load', () => {
-      resizeCanvas();
-      window.addEventListener('resize', resizeCanvas);
-
-      spinBtn.addEventListener('click', triggerSpin);
-      canvas.addEventListener('click', triggerSpin);
-
-      // Keyboard Controls (Spacebar to spin)
-      window.addEventListener('keydown', (e) => {
-        if (e.code === 'Space') {
-          e.preventDefault();
-          triggerSpin();
-        }
-      });
     });
+    window.addEventListener("resize", resizeCanvases);
+
+    // Initialize
+    resizeCanvases();
+    requestAnimationFrame(animate);
   </script>
 </body>
 </html>
